@@ -1,8 +1,9 @@
 ---
 title: "Tarea 1"
 output:
-  html_document: default
+  word_document: default
   pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -10,8 +11,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ##Datos de entrenamiento originales
-
-Se utilizan los datos de entrenamiento visto en clase 
 
 ```{r include=FALSE}
 #APRENDIZAJE SUPERVISADO
@@ -30,6 +29,10 @@ error_f <- function(df){
 library(ggplot2)
 library(dplyr)
 library(purrr)
+```
+
+
+```{r include=FALSE}
 #UNA MUESTRA
 x <- c(1,7,10,0,0,5,9,13,2,4,17,18,1,2)
 
@@ -47,7 +50,7 @@ curva.3<-geom_smooth(data=datos_entrena,method="lm",se=FALSE,color="blue",span=1
 
 
 ``` {r include=FALSE}
-#cálculo de errores
+#cálculo de errores muestra 1
 mod_rojo <- loess(y ~ x, data = datos_entrena, span=0.3)
 mod_gris <- loess(y ~ x, data = datos_entrena, span=1)
 mod_recta <- lm(y ~ x, data = datos_entrena)
@@ -60,7 +63,7 @@ df_mods <- df_mods %>% mutate(error_entrena = map_dbl(modelo, error_ent))
 
 df_mods
 
-#SE EXTRAE MUESTRA DE PRUEBA
+#SE EXTRAE MUESTRA DE PRUEBA 1
 set.seed(218052272)
 x_0<-sample(0:13,100,replace=T)
 error<-rnorm(length(x_0),0,500)
@@ -78,12 +81,12 @@ df_mods <- df_mods %>% mutate(error_prueba=map_dbl(modelo,error_p))
 df_mods 
 ```
 
-## Modelos obtenidos muestra 1
 
 ```{r, echo=FALSE, ,warning=FALSE}
 plot(ggplot(datos_entrena,aes(x=x,y=y))+geom_point()+curva.1+curva.2+curva.3)
 ```
 
+#Modelos muestra 2
 ``` {r include=FALSE}
 set.seed(250290)
 error<-rnorm(length(x),0,500)
@@ -129,7 +132,53 @@ df_mods <- df_mods %>% mutate(error_prueba=map_dbl(modelo,error_p))
 df_mods 
 ```
 
-## Modelos obtenidos muestra 2
+
+```{r, echo=FALSE, ,warning=FALSE}
+plot(ggplot(datos_entrena,aes(x=x,y=y))+geom_point()+curva.1+curva.2+curva.3)
+```
+
+##Modelos muestra 3
+Se toma una muestra de tamaño 100.
+
+```{r include=FALSE}
+set.seed(200)
+  x<-sample(0:20,100,replace=T)
+  error<-rnorm(length(x),0,500)
+  y<-f(x)+error
+  datos_entrena<-data.frame(x=x,y=y)
+  head(datos_entrena)
+  
+  curva.1<-geom_smooth(data=datos_entrena,method="loess",se=FALSE,color="gray",span=1,size=1.1)
+  curva.2<-geom_smooth(data=datos_entrena,method="loess",se=FALSE,color="red",span=0.3,size=1.1)
+  curva.3<-geom_smooth(data=datos_entrena,method="lm",se=FALSE,color="blue",span=1,size=1.1)
+  
+  #cálculo de errores
+  mod_rojo <- loess(y ~ x, data = datos_entrena, span=0.3)
+  mod_gris <- loess(y ~ x, data = datos_entrena, span=1)
+  mod_recta <- lm(y ~ x, data = datos_entrena)
+  df_mods<-data_frame(nombre=c('recta','rojo','gris'))
+  df_mods$modelo<-list(mod_recta,mod_rojo,mod_gris)
+  
+  error_ent <- error_f(datos_entrena)
+  
+  df_mods <- df_mods %>% mutate(error_entrena = map_dbl(modelo, error_ent))
+
+  #SE EXTRAE MUESTRA DE PRUEBA
+  #set.seed(218052272)
+  set.seed(21017)
+  x_0<-sample(0:20,100,replace=T)
+  error<-rnorm(length(x_0),0,500)
+  y_0<-f(x_0)+error
+  datos_prueba<-data_frame(x=x_0,y=y_0)
+  datos_prueba
+  
+  error_p<-error_f(datos_prueba)
+  df_mods <- df_mods %>% mutate(error_prueba=map_dbl(modelo,error_p))
+```
+
+```{r echo=FALSE}
+df_mods
+```
 
 ```{r, echo=FALSE, ,warning=FALSE}
 plot(ggplot(datos_entrena,aes(x=x,y=y))+geom_point()+curva.1+curva.2+curva.3)
