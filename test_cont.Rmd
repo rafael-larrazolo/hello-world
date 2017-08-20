@@ -1,0 +1,117 @@
+---
+title: "Tarea 1 (Cont.)"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Aprendizaje Supervisado
+
+Se realizaron 1000 simulaciones de distintos datos de entrenamiento, obteniendo los siguientes resultados:
+
+```{r include=FALSE}
+#APRENDIZAJE SUPERVISADO
+#-----------------------------------------
+f<-function(x){
+  ifelse(x<10,1000*sqrt(x),1000*sqrt(10))
+}
+
+error_f <- function(df){
+  function(mod){
+    preds <- predict(mod, newdata = df)
+    round(sqrt(mean((preds-df$y)^2)))
+  }
+}
+
+library(ggplot2)
+library(dplyr)
+library(purrr)
+```
+
+```{r include=FALSE}
+tarea1h<-function(){
+
+x<-sample(0:20,100,replace=T)
+error<-rnorm(length(x),0,500)
+y<-f(x)+error
+datos_entrena<-data.frame(x=x,y=y)
+head(datos_entrena)
+
+curva.1<-geom_smooth(data=datos_entrena,method="loess",se=FALSE,color="gray",span=1,size=1.1)
+curva.2<-geom_smooth(data=datos_entrena,method="loess",se=FALSE,color="red",span=0.3,size=1.1)
+curva.3<-geom_smooth(data=datos_entrena,method="lm",se=FALSE,color="blue",span=1,size=1.1)
+
+
+#cálculo de errores
+mod_rojo <- loess(y ~ x, data = datos_entrena, span=0.3)
+mod_gris <- loess(y ~ x, data = datos_entrena, span=1)
+mod_recta <- lm(y ~ x, data = datos_entrena)
+df_mods<-data_frame(nombre=c('recta','rojo','gris'))
+df_mods$modelo<-list(mod_recta,mod_rojo,mod_gris)
+
+error_ent <- error_f(datos_entrena)
+
+df_mods <- df_mods %>% mutate(error_entrena = map_dbl(modelo, error_ent))
+df_mods
+
+#SE EXTRAE MUESTRA DE PRUEBA
+#set.seed(218052272)
+x_0<-sample(0:20,100,replace=T)
+error<-rnorm(length(x_0),0,500)
+y_0<-f(x_0)+error
+datos_prueba<-data_frame(x=x_0,y=y_0)
+datos_prueba
+
+error_p<-error_f(datos_prueba)
+df_mods <- df_mods %>% mutate(error_prueba=map_dbl(modelo,error_p))
+df_mods
+}
+
+tarea1d<-function(n,semilla){
+  i=2
+  set.seed(semilla)
+  s<-tarea1h()
+  entrena<-data.frame(s[1,"error_entrena"],s[2,"error_entrena"],s[3,"error_entrena"])
+  names(entrena)<-c("recta","roja","gris")
+    
+  prueba<-data.frame(s[1,"error_prueba"],s[2,"error_prueba"],s[3,"error_prueba"])
+  names(prueba)<-c("recta","roja","gris")
+  
+  while(i<=n){
+    s<-tarea1h()  
+    ent<-data.frame(s[1,"error_entrena"],s[2,"error_entrena"],s[3,"error_entrena"])
+    names(ent)<-c("recta","roja","gris")
+    
+    pru<-data.frame(s[1,"error_prueba"],s[2,"error_prueba"],s[3,"error_prueba"])
+    names(pru)<-c("recta","roja","gris")
+    
+    entrena<-rbind(entrena,ent)
+    prueba<-rbind(prueba,pru)
+    i<-i+1
+  }
+  data.frame("err_ent"=entrena,"err_pru"=prueba)
+}
+```
+
+```{r include=FALSE}
+salida<-tarea1d(1000,250290)
+```
+
+Errores de prueba
+```{r echo=FALSE}
+summary(salida[,1:3])
+``` 
+Errores de entrenamiento
+```{r echo=FALSE}
+summary(salida[,4:6])
+```
+
+## Gráficos
+
+```{r pressure, echo=FALSE}
+boxplot(salida$err_ent.recta,salida$err_ent.roja,salida$err_ent.gris,names=c("recta","roja","gris"),main="Error de entrenamiento")
+boxplot(salida$err_pru.recta,salida$err_pru.roja,salida$err_pru.gris,names=c("recta","roja","gris"),main="Error de prueba")
+```
+
